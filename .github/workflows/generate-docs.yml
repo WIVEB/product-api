@@ -1,0 +1,317 @@
+name: Generate Documentation with Gemini AI
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install google-genai
+
+      - name: Make scripts executable
+        run: |
+          chmod +x .github/scripts/*.sh
+
+      - name: Create docs directory
+        run: |
+          mkdir -p docs/auto-generated
+
+      # Stage 1: Analyze Technology Stack
+      - name: Analyze Technology Stack
+        run: |
+          bash .github/scripts/analyze-tech-stack.sh
+
+      - name: Generate Tech Stack Documentation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          from google import genai
+          from google.genai import types
+          import os
+
+          client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+
+          with open('tech-stack-analysis.txt', 'r') as f:
+              analysis = f.read()
+
+          prompt = f"""Based on the following Spring Boot Java project configuration, generate comprehensive documentation about the technology stack.
+
+          IMPORTANT INSTRUCTIONS:
+          - Only document what is ACTUALLY present in the provided configuration files
+          - Do NOT add generic security warnings, best practices, or recommendations
+          - Do NOT include information that is not directly related to this specific project
+          - Be factual and concise - focus only on documenting what exists
+
+          Include:
+          1. Overview of the framework (Spring Boot, WebFlux) and language (Java) versions used
+          2. All dependencies with brief descriptions of their purpose in THIS project
+          3. Build tool configuration (Maven/Gradle) as specified
+          4. Deployment configuration (Docker) if present in the files
+
+          Format the output as a clean Markdown document with appropriate headings and structure.
+
+          {analysis}
+          """
+
+          response = client.models.generate_content(
+              model='gemini-2.0-flash-exp',
+              contents=prompt
+          )
+
+          with open('docs/auto-generated/01-technology-stack.md', 'w') as f:
+              f.write(response.text)
+
+          print("✓ Technology Stack documentation generated")
+          PYTHON_SCRIPT
+
+      # Stage 2: Analyze Core Features
+      - name: Analyze Core Features
+        run: |
+          bash .github/scripts/analyze-core-features.sh
+
+      - name: Generate Core Features Documentation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          from google import genai
+          from google.genai import types
+          import os
+
+          client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+
+          with open('core-features-analysis.txt', 'r') as f:
+              analysis = f.read()
+
+          prompt = f"""Based on the following business logic components from a Spring Boot reactive application, generate comprehensive documentation about the core features.
+
+          IMPORTANT INSTRUCTIONS:
+          - Only document what is ACTUALLY present in the provided code
+          - Do NOT add generic security warnings, best practices, or recommendations
+          - Do NOT include information that is not directly in the code
+          - Be factual and concise - focus only on documenting the actual implementation
+
+          Include:
+          1. Overview of the application workflow based on the code
+          2. Business logic components and their responsibilities as implemented
+          3. Dependency injection setup with Spring as configured
+          4. Domain models, use cases, and repository pattern implementation
+          5. Key classes and their interactions
+
+          Format the output as a clean Markdown document with appropriate headings, code examples where relevant, and clear explanations.
+
+          {analysis}
+          """
+
+          response = client.models.generate_content(
+              model='gemini-2.0-flash-exp',
+              contents=prompt
+          )
+
+          with open('docs/auto-generated/02-core-features.md', 'w') as f:
+              f.write(response.text)
+
+          print("✓ Core Features documentation generated")
+          PYTHON_SCRIPT
+
+      # Stage 3: Analyze API Endpoints
+      - name: Analyze API Endpoints
+        run: |
+          bash .github/scripts/analyze-api-endpoints.sh
+
+      - name: Generate API Documentation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          from google import genai
+          from google.genai import types
+          import os
+
+          client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+
+          with open('api-endpoints-analysis.txt', 'r') as f:
+              analysis = f.read()
+
+          prompt = f"""Based on the following API controller and endpoint implementations from a Spring Boot reactive application, generate comprehensive API documentation.
+
+          Include:
+          1. List of all available endpoints with HTTP methods
+          2. Request format (DTOs, request bodies, path parameters, query parameters)
+          3. Request validation rules (if present)
+          4. Response formats (success and error cases)
+          5. Reactive types used (Mono, Flux)
+          6. OpenAPI/Swagger UI availability
+          7. Example requests using curl or similar tools
+
+          Format the output as a clean Markdown document suitable for API consumers, with clear examples and all necessary details.
+
+          {analysis}
+          """
+
+          response = client.models.generate_content(
+              model='gemini-2.0-flash-exp',
+              contents=prompt
+          )
+
+          with open('docs/auto-generated/03-api-endpoints.md', 'w') as f:
+              f.write(response.text)
+
+          print("✓ API Endpoints documentation generated")
+          PYTHON_SCRIPT
+
+      # Stage 4: Architecture Diagram
+      - name: Analyze Architecture
+        run: |
+          bash .github/scripts/analyze-architecture.sh
+
+      - name: Generate Architecture Diagram
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          from google import genai
+          from google.genai import types
+          import os
+
+          client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+
+          with open('architecture-analysis.txt', 'r') as f:
+              analysis = f.read()
+
+          prompt = f"""Based on the following Spring Boot reactive application code, create a Mermaid architecture diagram showing the complete request flow.
+
+          IMPORTANT INSTRUCTIONS:
+          - Create a complete end-to-end flow diagram
+          - Show: User/Client → API Controller → Use Cases → Domain Layer → Repository → Data Storage
+          - Include all architectural layers (Presentation, Use Case, Domain, Infrastructure)
+          - Use proper Mermaid syntax for a flowchart or sequence diagram
+          - Be specific to THIS application's actual flow
+
+          The diagram should show:
+          1. User making HTTP request
+          2. Spring WebFlux controller layer
+          3. Request DTOs and validation
+          4. Use case layer (business logic)
+          5. Domain models
+          6. Repository layer
+          7. Data storage (in-memory, database, external services)
+          8. Reactive flow with Mono/Flux
+
+          Only output the Mermaid diagram code in a markdown code block, with a brief title above it.
+
+          {analysis}
+          """
+
+          response = client.models.generate_content(
+              model='gemini-2.0-flash-exp',
+              contents=prompt
+          )
+
+          with open('docs/auto-generated/00-architecture.md', 'w') as f:
+              f.write(response.text)
+
+          print("✓ Architecture diagram generated")
+          PYTHON_SCRIPT
+
+      # Stage 5: Generate Main README Index
+      - name: Generate Documentation Index
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          from google import genai
+          from google.genai import types
+          import os
+
+          client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+
+          # Read all generated docs
+          docs_content = ""
+          for doc_file in ['00-architecture.md', '01-technology-stack.md', '02-core-features.md', '03-api-endpoints.md']:
+              with open(f'docs/auto-generated/{doc_file}', 'r') as f:
+                  docs_content += f"\n\n=== {doc_file} ===\n\n{f.read()}"
+
+          prompt = f"""Based on the following auto-generated documentation sections for a Spring Boot reactive application, create a comprehensive README.md file.
+
+          IMPORTANT INSTRUCTIONS:
+          - Only document what is ACTUALLY present in the provided documentation
+          - Do NOT add generic warnings, best practices, or recommendations
+          - Be factual and concise
+          - Include the architecture diagram from 00-architecture.md
+
+          The README should include:
+          1. Project title and brief description
+          2. Architecture diagram (from the auto-generated docs)
+          3. Key features list (based on actual functionality)
+          4. Quick start guide (Maven/Gradle commands, running the app as documented)
+          5. Links to detailed documentation sections
+          6. API usage examples (based on actual endpoints)
+          7. Configuration properties required (only those actually used)
+          8. Docker deployment instructions (if documented)
+
+          Make it professional, clear, and welcoming for developers.
+
+          {docs_content}
+          """
+
+          response = client.models.generate_content(
+              model='gemini-2.0-flash-exp',
+              contents=prompt
+          )
+
+          with open('docs/auto-generated/README.md', 'w') as f:
+              f.write(response.text)
+
+          print("✓ Main README documentation generated")
+          PYTHON_SCRIPT
+
+      # Commit and push the generated documentation
+      - name: Commit documentation
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/auto-generated/
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No documentation changes to commit"
+          else
+            git commit -m "docs: Auto-generate documentation with Gemini AI
+
+          Generated documentation for:
+          - Technology stack
+          - Core features
+          - API endpoints
+          - Main README
+
+          🤖 Auto-generated by GitHub Actions"
+            git push
+            echo "✓ Documentation committed and pushed"
+          fi
+
+      - name: Clean up temporary files
+        if: always()
+        run: |
+          rm -f tech-stack-analysis.txt
+          rm -f core-features-analysis.txt
+          rm -f api-endpoints-analysis.txt
+          rm -f architecture-analysis.txt
