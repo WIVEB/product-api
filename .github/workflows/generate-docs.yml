@@ -294,6 +294,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No documentation changes to commit"
           else
+            git pull --rebase origin main
             git commit -m "docs: Auto-generate documentation with Gemini AI
 
           Generated documentation for:
